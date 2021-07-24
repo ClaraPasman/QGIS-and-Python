@@ -24,9 +24,10 @@ class Modelo1(QgsProcessingAlgorithm):
         results = {}
         outputs = {}
 
-        
-        
+############################################################################################################################################################
 
+####### Fix geometries: use this tool to fix any polygon geometry-related problem (sometimes polygons may stack one on top of the other)#######             
+       
         
         
         alg_params = {
@@ -40,7 +41,7 @@ class Modelo1(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}       
         
-        
+        ####### With autoincremental tool enumerate observations per country#######
         
         alg_params = {
             'FIELD_NAME': 'GID',
@@ -57,9 +58,40 @@ class Modelo1(QgsProcessingAlgorithm):
         return results
 
         
+  #######Field calculator: length#######   
+        alg_params = {
+            'FIELD_LENGTH': 2,
+            'FIELD_NAME': 'length',
+            'FIELD_PRECISION': 0,
+            'FIELD_TYPE': 1,
+            'FORMULA': 'length(NAME_PROP)',
+            'INPUT': 'Incrementado_27fe8a76_6aa6_4def_8929_0f1e1ed1d2c3',
+            'OUTPUT': parameters['Length']
+        }
+        outputs['CalculadoraDeCampos'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Length'] = outputs['CalculadoraDeCampos']['OUTPUT']
+
+        feedback.setCurrentStep(3)
+        if feedback.isCanceled():
+            return {}
+  
+#######Keep vaiables which length is lower than 11#######
+        
+   
+        alg_params = {
+            'INPUT': 'Calculado_4b2727ef_a5b8_48af_9cc3_438be5c0002e',
+            'OUTPUT_menor_a_11': parameters['Output_menor_a_11']
+        }
+        outputs['FiltroDeEntidad'] = processing.run('native:filter', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Output_menor_a_11'] = outputs['FiltroDeEntidad']['OUTPUT_menor_a_11']
+
+        feedback.setCurrentStep(4)
+        if feedback.isCanceled():
+            return {}
         
         
         
+   #######Copy language name into a new variable with shorter name#######     
              
         alg_params = {
             'FIELD_LENGTH': 10,
@@ -77,21 +109,9 @@ class Modelo1(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        
    
-        alg_params = {
-            'INPUT': 'Calculado_4b2727ef_a5b8_48af_9cc3_438be5c0002e',
-            'OUTPUT_menor_a_11': parameters['Output_menor_a_11']
-        }
-        outputs['FiltroDeEntidad'] = processing.run('native:filter', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Output_menor_a_11'] = outputs['FiltroDeEntidad']['OUTPUT_menor_a_11']
-
-        feedback.setCurrentStep(4)
-        if feedback.isCanceled():
-            return {}
         
-        
-        
+       #######Drop variables that you're not interested in#######
        
       
         alg_params = {
@@ -106,33 +126,8 @@ class Modelo1(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-   
-
-
-
-
-
-        # Calculadora de campos
-        alg_params = {
-            'FIELD_LENGTH': 2,
-            'FIELD_NAME': 'length',
-            'FIELD_PRECISION': 0,
-            'FIELD_TYPE': 1,
-            'FORMULA': 'length(NAME_PROP)',
-            'INPUT': 'Incrementado_27fe8a76_6aa6_4def_8929_0f1e1ed1d2c3',
-            'OUTPUT': parameters['Length']
-        }
-        outputs['CalculadoraDeCampos'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Length'] = outputs['CalculadoraDeCampos']['OUTPUT']
-
-        feedback.setCurrentStep(3)
-        if feedback.isCanceled():
-            return {}
-
+  
        
-
-
-    
   
     def name(self):
         return 'Modelo1'

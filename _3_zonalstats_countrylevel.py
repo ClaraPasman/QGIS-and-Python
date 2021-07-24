@@ -54,9 +54,7 @@ PREFS = ['elev_', 'temp_', 'prec_', 'lqua_', 'pd15_', 'pd19_', 'pd20_']
 RASTS = RASTS[3:]
 PREFS = PREFS[3:]
 
-##################################################################
-# Fix geometries
-##################################################################
+####### Fix geometries: use this tool to fix any polygon geometry-related problem (sometimes polygons may stack one on top of the other)####### 
 print('fixing geometries')
 fixgeo_dict = {
     'INPUT': countries,
@@ -64,9 +62,7 @@ fixgeo_dict = {
 }
 fix_geo = processing.run('native:fixgeometries', fixgeo_dict)['OUTPUT']
 
-##################################################################
-# Drop field(s)
-##################################################################
+#######Drop variables that you're not interested in and save as a new layer#######
 print('dropping unnecessary fields')
 allfields = [field.name() for field in fix_geo.fields()]
 keepfields = ['ADMIN', 'ISO_A3']
@@ -79,17 +75,12 @@ drop_dict = {
 }
 drop_fields = processing.run('qgis:deletecolumn', drop_dict)['OUTPUT']
 
-# here we loop over the rasters
+######## Select the zonal satatistics for each country for each raster (mean of land quality and population), calculate mean and save as new layer#######
+####### Instead of doing one by one we loop over the rasters #######
 for idx, rast in enumerate(RASTS):
 
 	pref = PREFS[idx]
 
-	# not needed, can use rast directly as 'INPUT_RASTER' for zs
-	# rlayer = QgsRasterLayer(rast, "rasterlayer", "gdal")
-
-	###################################################################
-	# Zonal statistics
-	###################################################################
 	print('computing zonal stats {}'.format(pref))
 	zs_dict = {
 	    'COLUMN_PREFIX': pref,
@@ -100,9 +91,7 @@ for idx, rast in enumerate(RASTS):
 	}
 	processing.run('qgis:zonalstatistics', zs_dict)
 
-###################################################################
-# write to CSV
-###################################################################
+#######Export attribute table as csv#######
 print('outputting the data')
 
 with open(outcsv, 'w') as output_file:

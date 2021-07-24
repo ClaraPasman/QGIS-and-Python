@@ -43,7 +43,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         
 ############################################################################################################################################################
 
-
+####### Fix geometries for country polygons: use this tool to fix any polygon geometry-related problem (sometimes polygons may stack one on top of the other) #######
         alg_params = {
             'INPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/input/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp',
             'OUTPUT': parameters['Fixgeo_countries']
@@ -57,7 +57,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         
 
 
-
+####### Fix geometries for coast polygons: use this tool to fix any polygon geometry-related problem (sometimes polygons may stack one on top of the other) #######
         alg_params = {
             'INPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/input/ne_10m_coastline/ne_10m_coastline.shp',
             'OUTPUT': parameters['Fixgeo_coast']
@@ -70,7 +70,7 @@ class Modelo4b(QgsProcessingAlgorithm):
             return {}        
         
 
-####### Add centroid to each country#######
+####### Add centroid to each country #######
         alg_params = {
             'ALL_PARTS': False,
             'INPUT': outputs['CorregirGeometrasContries']['OUTPUT'],
@@ -96,7 +96,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}     
      
-#######Drop variables that you're not interested in:fixgeo_coast#######
+####### Drop variables that you're not interested in:fixgeo_coast #######
         alg_params = {
             'COLUMN': ['scalerank'],
             'INPUT': 'Geometrías_corregidas_307b078f_b077_44e6_856e_8d7d7875593d',
@@ -109,7 +109,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
     
-
+####### Drop variables that you're not interested in: centroids_w_coast #######
         alg_params = {
             'COLUMN': ['featurecla','scalerank','LABELRANK','SOVEREIGNT','SOV_A3','ADM0_DIF','LEVEL','TYPE','ADM0_A3','GEOU_DIF','GEOUNIT','GU_A3','SU_DIF','SUBUNIT','SU_A3','BRK_DIFF','NAME','NAME_LONG','BRK_A3','BRK_NAME','BRK_GROUP','ABBREV','POSTAL','FORMAL_EN','FORMAL_FR','NAME_CIAWF','NOTE_ADM0','NOTE_BRK','NAME_SORT','NAME_ALT','MAPCOLOR7','MAPCOLOR8','APCOLOR9','MAPCOLOR13','POP_EST','POP_RANK','GDP_MD_EST','POP_YEAR','LASTCENSUS','GDP_YEAR','ECONOMY','INCOME_GRP','WIKIPEDIA','FIPS_10_','ISO_A2','ISO_A3_EH','ISO_N3','UN_A3','WB_A2','WB_A3','WOE_ID','WOE_ID_EH','WOE_NOTE','ADM0_A3_IS','ADM0_A3_US','ADM0_A3_UN','ADM0_A3_WB','CONTINENT','REGION_UN','SUBREGION','REGION_WB','NAME_LEN','LONG_LEN','ABBREV_LEN','TINY','HOMEPART','MIN_ZOOM','MIN_LABEL','MAX_LABEL','NE_ID','WIKIDATAID','NAME_AR','NAME_BN','NAME_DE','NAME_EN','NAME_ES','NAME_FR','NAME_EL','NAME_HI','NAME_HU','NAME_ID','NAME_IT','NAME_JA','NAME_KO','NAME_NL','NAME_PL','NAME_PT','NAME_RU','NAME_SV','NAME_TR','NAME_VI','NAME_ZH','MAPCOLOR9'],
             'INPUT': 'Información_de_geometría_añadida_028a0ab0_2033_4655_a86f_3f5fdd2a8316',
@@ -123,7 +123,7 @@ class Modelo4b(QgsProcessingAlgorithm):
             return {}
   
     
-####### Calculate distance from centroid to coast#######
+####### Calculate distance from centroid to coast (with v.distance) #######
         alg_params = {
             'GRASS_MIN_AREA_PARAMETER': 0.0001,
             'GRASS_OUTPUT_TYPE_PARAMETER': 0,
@@ -152,7 +152,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
    
-#######Field Calculator: adjust "cat" to merge with distance lines#######
+####### Field Calculator: adjust "cat" to merge with distance lines #######
         alg_params = {
             'FIELD_LENGTH': 4,
             'FIELD_NAME': 'cat',
@@ -170,7 +170,7 @@ class Modelo4b(QgsProcessingAlgorithm):
             return {}
 
    
-#######Drop variables that you're not interested in: cat_adjust#######
+####### Drop variables that you're not interested in: cat_adjust #######
         alg_params = {
             'COLUMN': ['xcoord','ycoord'],
             'INPUT': 'Calculado_22fbfe03_1b02_426e_a2f9_13a666786ccf',
@@ -184,7 +184,7 @@ class Modelo4b(QgsProcessingAlgorithm):
             return {}
  
     
-
+####### Join attributes by field value: merge both tables nearest and cenroids #######
 
         alg_params = {
             'DISCARD_NONMATCHING': False,
@@ -204,7 +204,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-    
+ ####### Drop variables that you're not interested in: centroids_coast_joined #######  
 
         alg_params = {
             'COLUMN': ['featurecla','scalerank','LABELRANK','SOVEREIGNT','SOV_A3','ADM0_DIF','LEVEL','TYPE','ADM0_A3','GEOU_DIF','GEOUNIT','GU_A3','SU_DIF','SUBUNIT','SU_A3','BRK_DIFF','NAME','NAME_LONG','BRK_A3','BRK_NAME','BRK_GROUP','ABBREV','POSTAL','FORMAL_EN','FORMAL_FR','NAME_CIAWF','NOTE_ADM0','NOTE_BRK','NAME_SORT','NAME_ALT','MAPCOLOR7','MAPCOLOR8','APCOLOR9','MAPCOLOR13','POP_EST','POP_RANK','GDP_MD_EST','POP_YEAR','LASTCENSUS','GDP_YEAR','ECONOMY','INCOME_GRP','WIKIPEDIA','FIPS_10_','ISO_A2','ISO_A3_EH','ISO_N3','UN_A3','WB_A2','WB_A3','WOE_ID','WOE_ID_EH','WOE_NOTE','ADM0_A3_IS','ADM0_A3_US','ADM0_A3_UN','ADM0_A3_WB','CONTINENT','REGION_UN','SUBREGION','REGION_WB','NAME_LEN','LONG_LEN','ABBREV_LEN','TINY','HOMEPART','MIN_ZOOM','MIN_LABEL','MAX_LABEL','NE_ID','WIKIDATAID','NAME_AR','NAME_BN','NAME_DE','NAME_EN','NAME_ES','NAME_FR','NAME_EL','NAME_HI','NAME_HU','NAME_ID','NAME_IT','NAME_JA','NAME_KO','NAME_NL','NAME_PL','NAME_PT','NAME_RU','NAME_SV','NAME_TR','NAME_VI','NAME_ZH','MAPCOLOR9','ADMIN_2','ISO_A3_2'],
@@ -219,7 +219,7 @@ class Modelo4b(QgsProcessingAlgorithm):
             return {}
 
        
-####### Join attributes by field value: merge both tables nearest and distance#######
+####### Join attributes by field value: merge both tables nearest and distance #######
         alg_params = {
             'DISCARD_NONMATCHING': False,
             'FIELD': 'cat',
@@ -239,7 +239,7 @@ class Modelo4b(QgsProcessingAlgorithm):
             return {}
         
         
-####### Extract vertices#######
+####### Extract vertices #######
         alg_params = {
             'INPUT': 'Capa_unida_14fda893_f44e_41f2_9296_c306c31a37ca',
             'OUTPUT': parameters['Extract_vertices']
@@ -267,7 +267,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
   
-        
+####### Field Calculator: create new field containing the latitude of the centroid #######
 
         alg_params = {
             'FIELD_LENGTH': 10,
@@ -285,7 +285,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
      
- #######Field Calculator: create new field containing the longitude of the centroid#######
+ ####### Field Calculator: create new field containing the longitude of the centroid #######
         alg_params = {
             'FIELD_LENGTH': 10,
             'FIELD_NAME': 'cent_lon',
@@ -303,7 +303,7 @@ class Modelo4b(QgsProcessingAlgorithm):
             return {}
 
         
-#######Drop variables that you're not interested in: cent_lat_lon#######
+####### Drop variables that you're not interested in: cent_lat_lon #######
         alg_params = {
             'COLUMN': ['fid','cat','xcoord','ycoord','fid_2','cat_2','vertex_index','vertex_part','vertex_part','_index','angle'],
             'INPUT': 'Calculado_1d5469fb_ee3c_408f_a792_e4964bd8200f',
@@ -326,7 +326,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}    
         
-     
+####### Field Calculator: create new field containing the latitude of the coast centroid #######
 
         alg_params = {
             'FIELD_LENGTH': 10,
@@ -344,7 +344,7 @@ class Modelo4b(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
        
-#######Field Calculator: create new field containing the longitude of the coast centroid#######
+####### Field Calculator: create new field containing the longitude of the coast centroid #######
         alg_params = {
             'FIELD_LENGTH': 10,
             'FIELD_NAME': 'coast_lon',
@@ -363,7 +363,7 @@ class Modelo4b(QgsProcessingAlgorithm):
 
         
 
-#######Drop variables that you're not interested in: coast_lon#######
+####### Drop variables that you're not interested in: coast_lon #######
         alg_params = {
             'COLUMN': ['xcoord','ycoord\n'],
             'INPUT': 'Calculado_3c69fec3_1786_4950_af43_2cb9cce6990d',

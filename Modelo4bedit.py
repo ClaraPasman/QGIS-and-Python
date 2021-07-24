@@ -1,9 +1,6 @@
-"""
-Model exported as python.
-Name : modelo4b 
-Group : 
-With QGIS : 31608
-"""
+#######Prepare QGIS for working#############################################################################################################################
+############################################################################################################################################################
+
 
 from qgis.core import QgsProcessing
 from qgis.core import QgsProcessingAlgorithm
@@ -39,59 +36,67 @@ class Modelo4b(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFeatureSink('Add_geo_coast', 'add_geo_coast', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue=None))
 
     def processAlgorithm(self, parameters, context, model_feedback):
-        # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
-        # overall progress through the model
+        
         feedback = QgsProcessingMultiStepFeedback(21, model_feedback)
         results = {}
         outputs = {}
+        
+############################################################################################################################################################
 
-        # Extraer vértices
+
         alg_params = {
-            'INPUT': 'Capa_unida_14fda893_f44e_41f2_9296_c306c31a37ca',
-            'OUTPUT': parameters['Extract_vertices']
+            'INPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/input/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp',
+            'OUTPUT': parameters['Fixgeo_countries']
         }
-        outputs['ExtraerVrtices'] = processing.run('native:extractvertices', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Extract_vertices'] = outputs['ExtraerVrtices']['OUTPUT']
+        outputs['CorregirGeometrasContries'] = processing.run('native:fixgeometries', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Fixgeo_countries'] = outputs['CorregirGeometrasContries']['OUTPUT']
 
-        feedback.setCurrentStep(1)
+        feedback.setCurrentStep(14)
         if feedback.isCanceled():
             return {}
+        
 
-        # Calculadora de campos
+
+
         alg_params = {
-            'FIELD_LENGTH': 10,
-            'FIELD_NAME': 'coast_lon',
-            'FIELD_PRECISION': 10,
-            'FIELD_TYPE': 0,
-            'FORMULA': 'attribute($currentfeature, \'xcoord\')',
-            'INPUT': 'Calculado_867f6c18_7cb6_478c_ba9b_3e8dd208c133',
-            'OUTPUT': parameters['Added_field_coast_lon']
+            'INPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/input/ne_10m_coastline/ne_10m_coastline.shp',
+            'OUTPUT': parameters['Fixgeo_coast']
         }
-        outputs['CalculadoraDeCampos'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Added_field_coast_lon'] = outputs['CalculadoraDeCampos']['OUTPUT']
+        outputs['CorregirGeometrasCoast'] = processing.run('native:fixgeometries', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Fixgeo_coast'] = outputs['CorregirGeometrasCoast']['OUTPUT']
 
-        feedback.setCurrentStep(2)
+        feedback.setCurrentStep(11)
         if feedback.isCanceled():
-            return {}
+            return {}        
+        
 
-        # Calculadora de campos - cent_lat
+####### Add centroid to each country#######
         alg_params = {
-            'FIELD_LENGTH': 10,
-            'FIELD_NAME': 'cent_lat',
-            'FIELD_PRECISION': 10,
-            'FIELD_TYPE': 0,
-            'FORMULA': 'attribute($currentfeature, \'ycoord\')',
-            'INPUT': 'Extraído__atributo__20c5dffb_8c9c_43b4_82b5_7bef65f572b5',
-            'OUTPUT': parameters['Added_field_cent_lat']
+            'ALL_PARTS': False,
+            'INPUT': outputs['CorregirGeometrasContries']['OUTPUT'],
+            'OUTPUT': parameters['Country_centroids']
         }
-        outputs['CalculadoraDeCamposCent_lat'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Added_field_cent_lat'] = outputs['CalculadoraDeCamposCent_lat']['OUTPUT']
+        outputs['Centroides'] = processing.run('native:centroids', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Country_centroids'] = outputs['Centroides']['OUTPUT']
 
-        feedback.setCurrentStep(3)
+        feedback.setCurrentStep(15)
         if feedback.isCanceled():
-            return {}
+            return {}   
+        
+####### Add coordinates to centroids by "adding geometry attributes"  #######
+        alg_params = {
+            'CALC_METHOD': 0,
+            'INPUT': outputs['Centroides']['OUTPUT'],
+            'OUTPUT': parameters['Centroids_w_coord']
+        }
+        outputs['AgregarAtributosDeGeometra'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Centroids_w_coord'] = outputs['AgregarAtributosDeGeometra']['OUTPUT']
 
-        # Quitar campo(s) - fixgeo_coast
+        feedback.setCurrentStep(19)
+        if feedback.isCanceled():
+            return {}     
+     
+#######Drop variables that you're not interested in:fixgeo_coast#######
         alg_params = {
             'COLUMN': ['scalerank'],
             'INPUT': 'Geometrías_corregidas_307b078f_b077_44e6_856e_8d7d7875593d',
@@ -103,40 +108,22 @@ class Modelo4b(QgsProcessingAlgorithm):
         feedback.setCurrentStep(4)
         if feedback.isCanceled():
             return {}
+    
 
-        # Quitar campo(s) -coast_lon
         alg_params = {
-            'COLUMN': ['xcoord','ycoord\n'],
-            'INPUT': 'Calculado_3c69fec3_1786_4950_af43_2cb9cce6990d',
-            'OUTPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/output/csvout.gpkg',
-            'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
+            'COLUMN': ['featurecla','scalerank','LABELRANK','SOVEREIGNT','SOV_A3','ADM0_DIF','LEVEL','TYPE','ADM0_A3','GEOU_DIF','GEOUNIT','GU_A3','SU_DIF','SUBUNIT','SU_A3','BRK_DIFF','NAME','NAME_LONG','BRK_A3','BRK_NAME','BRK_GROUP','ABBREV','POSTAL','FORMAL_EN','FORMAL_FR','NAME_CIAWF','NOTE_ADM0','NOTE_BRK','NAME_SORT','NAME_ALT','MAPCOLOR7','MAPCOLOR8','APCOLOR9','MAPCOLOR13','POP_EST','POP_RANK','GDP_MD_EST','POP_YEAR','LASTCENSUS','GDP_YEAR','ECONOMY','INCOME_GRP','WIKIPEDIA','FIPS_10_','ISO_A2','ISO_A3_EH','ISO_N3','UN_A3','WB_A2','WB_A3','WOE_ID','WOE_ID_EH','WOE_NOTE','ADM0_A3_IS','ADM0_A3_US','ADM0_A3_UN','ADM0_A3_WB','CONTINENT','REGION_UN','SUBREGION','REGION_WB','NAME_LEN','LONG_LEN','ABBREV_LEN','TINY','HOMEPART','MIN_ZOOM','MIN_LABEL','MAX_LABEL','NE_ID','WIKIDATAID','NAME_AR','NAME_BN','NAME_DE','NAME_EN','NAME_ES','NAME_FR','NAME_EL','NAME_HI','NAME_HU','NAME_ID','NAME_IT','NAME_JA','NAME_KO','NAME_NL','NAME_PL','NAME_PT','NAME_RU','NAME_SV','NAME_TR','NAME_VI','NAME_ZH','MAPCOLOR9'],
+            'INPUT': 'Información_de_geometría_añadida_028a0ab0_2033_4655_a86f_3f5fdd2a8316',
+            'OUTPUT': parameters['Centroidout']
         }
-        outputs['QuitarCamposCoast_lon'] = processing.run('qgis:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        outputs['QuitarCamposCentroids_w_coast'] = processing.run('qgis:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Centroidout'] = outputs['QuitarCamposCentroids_w_coast']['OUTPUT']
 
-        feedback.setCurrentStep(5)
+        feedback.setCurrentStep(20)
         if feedback.isCanceled():
             return {}
-
-        # Unir atributos por valor de campo -
-        alg_params = {
-            'DISCARD_NONMATCHING': False,
-            'FIELD': 'ISO_A3',
-            'FIELDS_TO_COPY': [''],
-            'FIELD_2': 'ISO_A3',
-            'INPUT': 'Campos_restantes_e358711e_8428_4fe2_a5c5_d768323ba885',
-            'INPUT_2': 'Campos_restantes_cd95ff82_b829_4f83_a233_7b72da1b09d1',
-            'METHOD': 1,
-            'PREFIX': '',
-            'OUTPUT': parameters['Centroids_nearest_coast_joined']
-        }
-        outputs['UnirAtributosPorValorDeCampo'] = processing.run('native:joinattributestable', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Centroids_nearest_coast_joined'] = outputs['UnirAtributosPorValorDeCampo']['OUTPUT']
-
-        feedback.setCurrentStep(6)
-        if feedback.isCanceled():
-            return {}
-
-        # v.distance
+  
+    
+####### Calculate distance from centroid to coast#######
         alg_params = {
             'GRASS_MIN_AREA_PARAMETER': 0.0001,
             'GRASS_OUTPUT_TYPE_PARAMETER': 0,
@@ -164,8 +151,8 @@ class Modelo4b(QgsProcessingAlgorithm):
         feedback.setCurrentStep(7)
         if feedback.isCanceled():
             return {}
-
-        #  Calculadora de campos - cat adjust
+   
+#######Field Calculator: adjust "cat" to merge with distance lines#######
         alg_params = {
             'FIELD_LENGTH': 4,
             'FIELD_NAME': 'cat',
@@ -182,47 +169,8 @@ class Modelo4b(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        # Extraer por atributo
-        alg_params = {
-            'FIELD': 'distance',
-            'INPUT': 'Vértices_b8cbf0ec_902d_42f6_8cf4_4ecc539ae562',
-            'OPERATOR': 2,
-            'VALUE': '0',
-            'OUTPUT': parameters['Extract_by_attribute']
-        }
-        outputs['ExtraerPorAtributo'] = processing.run('native:extractbyattribute', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Extract_by_attribute'] = outputs['ExtraerPorAtributo']['OUTPUT']
-
-        feedback.setCurrentStep(9)
-        if feedback.isCanceled():
-            return {}
-
-        # Agregar atributos de geometría
-        alg_params = {
-            'CALC_METHOD': 0,
-            'INPUT': 'Campos_restantes_82b5304d_11ed_4cc9_8333_cca4d684f08e',
-            'OUTPUT': parameters['Add_geo_coast']
-        }
-        outputs['AgregarAtributosDeGeometra'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Add_geo_coast'] = outputs['AgregarAtributosDeGeometra']['OUTPUT']
-
-        feedback.setCurrentStep(10)
-        if feedback.isCanceled():
-            return {}
-
-        # Corregir geometrías - coast
-        alg_params = {
-            'INPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/input/ne_10m_coastline/ne_10m_coastline.shp',
-            'OUTPUT': parameters['Fixgeo_coast']
-        }
-        outputs['CorregirGeometrasCoast'] = processing.run('native:fixgeometries', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Fixgeo_coast'] = outputs['CorregirGeometrasCoast']['OUTPUT']
-
-        feedback.setCurrentStep(11)
-        if feedback.isCanceled():
-            return {}
-
-        # Quitar campo(s) - cat_adjust
+   
+#######Drop variables that you're not interested in: cat_adjust#######
         alg_params = {
             'COLUMN': ['xcoord','ycoord'],
             'INPUT': 'Calculado_22fbfe03_1b02_426e_a2f9_13a666786ccf',
@@ -234,50 +182,44 @@ class Modelo4b(QgsProcessingAlgorithm):
         feedback.setCurrentStep(12)
         if feedback.isCanceled():
             return {}
+ 
+    
 
-        # Calculadora de campos - cent_lon
+
         alg_params = {
-            'FIELD_LENGTH': 10,
-            'FIELD_NAME': 'cent_lon',
-            'FIELD_PRECISION': 10,
-            'FIELD_TYPE': 0,
-            'FORMULA': 'attribute($currentfeature, \'xcoord\')',
-            'INPUT': 'Calculado_7de0a7b2_d5b3_4090_b93c_90732a2bfe01',
-            'OUTPUT': parameters['Added_field_cent_lon']
+            'DISCARD_NONMATCHING': False,
+            'FIELD': 'ISO_A3',
+            'FIELDS_TO_COPY': [''],
+            'FIELD_2': 'ISO_A3',
+            'INPUT': 'Campos_restantes_e358711e_8428_4fe2_a5c5_d768323ba885',
+            'INPUT_2': 'Campos_restantes_cd95ff82_b829_4f83_a233_7b72da1b09d1',
+            'METHOD': 1,
+            'PREFIX': '',
+            'OUTPUT': parameters['Centroids_nearest_coast_joined']
         }
-        outputs['CalculadoraDeCamposCent_lon'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Added_field_cent_lon'] = outputs['CalculadoraDeCamposCent_lon']['OUTPUT']
+        outputs['UnirAtributosPorValorDeCampo'] = processing.run('native:joinattributestable', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Centroids_nearest_coast_joined'] = outputs['UnirAtributosPorValorDeCampo']['OUTPUT']
 
-        feedback.setCurrentStep(13)
+        feedback.setCurrentStep(6)
         if feedback.isCanceled():
             return {}
 
-        # Corregir geometrías - contries
-        alg_params = {
-            'INPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/input/ne_10m_admin_0_countries/ne_10m_admin_0_countries.shp',
-            'OUTPUT': parameters['Fixgeo_countries']
-        }
-        outputs['CorregirGeometrasContries'] = processing.run('native:fixgeometries', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Fixgeo_countries'] = outputs['CorregirGeometrasContries']['OUTPUT']
+    
 
-        feedback.setCurrentStep(14)
+        alg_params = {
+            'COLUMN': ['featurecla','scalerank','LABELRANK','SOVEREIGNT','SOV_A3','ADM0_DIF','LEVEL','TYPE','ADM0_A3','GEOU_DIF','GEOUNIT','GU_A3','SU_DIF','SUBUNIT','SU_A3','BRK_DIFF','NAME','NAME_LONG','BRK_A3','BRK_NAME','BRK_GROUP','ABBREV','POSTAL','FORMAL_EN','FORMAL_FR','NAME_CIAWF','NOTE_ADM0','NOTE_BRK','NAME_SORT','NAME_ALT','MAPCOLOR7','MAPCOLOR8','APCOLOR9','MAPCOLOR13','POP_EST','POP_RANK','GDP_MD_EST','POP_YEAR','LASTCENSUS','GDP_YEAR','ECONOMY','INCOME_GRP','WIKIPEDIA','FIPS_10_','ISO_A2','ISO_A3_EH','ISO_N3','UN_A3','WB_A2','WB_A3','WOE_ID','WOE_ID_EH','WOE_NOTE','ADM0_A3_IS','ADM0_A3_US','ADM0_A3_UN','ADM0_A3_WB','CONTINENT','REGION_UN','SUBREGION','REGION_WB','NAME_LEN','LONG_LEN','ABBREV_LEN','TINY','HOMEPART','MIN_ZOOM','MIN_LABEL','MAX_LABEL','NE_ID','WIKIDATAID','NAME_AR','NAME_BN','NAME_DE','NAME_EN','NAME_ES','NAME_FR','NAME_EL','NAME_HI','NAME_HU','NAME_ID','NAME_IT','NAME_JA','NAME_KO','NAME_NL','NAME_PL','NAME_PT','NAME_RU','NAME_SV','NAME_TR','NAME_VI','NAME_ZH','MAPCOLOR9','ADMIN_2','ISO_A3_2'],
+            'INPUT': 'Capa_unida_6cf146ea_9ec6_4efc_940e_616907d88a77',
+            'OUTPUT': parameters['Centroids_nearest_coast_joined_dropfields']
+        }
+        outputs['QuitarCamposCentroids_coast_joined'] = processing.run('qgis:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Centroids_nearest_coast_joined_dropfields'] = outputs['QuitarCamposCentroids_coast_joined']['OUTPUT']
+
+        feedback.setCurrentStep(18)
         if feedback.isCanceled():
             return {}
 
-        # Centroides
-        alg_params = {
-            'ALL_PARTS': False,
-            'INPUT': outputs['CorregirGeometrasContries']['OUTPUT'],
-            'OUTPUT': parameters['Country_centroids']
-        }
-        outputs['Centroides'] = processing.run('native:centroids', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Country_centroids'] = outputs['Centroides']['OUTPUT']
-
-        feedback.setCurrentStep(15)
-        if feedback.isCanceled():
-            return {}
-
-        # Unir atributos por valor de campo
+       
+####### Join attributes by field value: merge both tables nearest and distance#######
         alg_params = {
             'DISCARD_NONMATCHING': False,
             'FIELD': 'cat',
@@ -295,8 +237,97 @@ class Modelo4b(QgsProcessingAlgorithm):
         feedback.setCurrentStep(16)
         if feedback.isCanceled():
             return {}
+        
+        
+####### Extract vertices#######
+        alg_params = {
+            'INPUT': 'Capa_unida_14fda893_f44e_41f2_9296_c306c31a37ca',
+            'OUTPUT': parameters['Extract_vertices']
+        }
+        outputs['ExtraerVrtices'] = processing.run('native:extractvertices', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Extract_vertices'] = outputs['ExtraerVrtices']['OUTPUT']
 
-        # Calculadora de campos
+        feedback.setCurrentStep(1)
+        if feedback.isCanceled():
+            return {}
+    
+        
+####### Extract by attribute #######
+        alg_params = {
+            'FIELD': 'distance',
+            'INPUT': 'Vértices_b8cbf0ec_902d_42f6_8cf4_4ecc539ae562',
+            'OPERATOR': 2,
+            'VALUE': '0',
+            'OUTPUT': parameters['Extract_by_attribute']
+        }
+        outputs['ExtraerPorAtributo'] = processing.run('native:extractbyattribute', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Extract_by_attribute'] = outputs['ExtraerPorAtributo']['OUTPUT']
+
+        feedback.setCurrentStep(9)
+        if feedback.isCanceled():
+            return {}
+  
+        
+
+        alg_params = {
+            'FIELD_LENGTH': 10,
+            'FIELD_NAME': 'cent_lat',
+            'FIELD_PRECISION': 10,
+            'FIELD_TYPE': 0,
+            'FORMULA': 'attribute($currentfeature, \'ycoord\')',
+            'INPUT': 'Extraído__atributo__20c5dffb_8c9c_43b4_82b5_7bef65f572b5',
+            'OUTPUT': parameters['Added_field_cent_lat']
+        }
+        outputs['CalculadoraDeCamposCent_lat'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Added_field_cent_lat'] = outputs['CalculadoraDeCamposCent_lat']['OUTPUT']
+
+        feedback.setCurrentStep(3)
+        if feedback.isCanceled():
+            return {}
+     
+ #######Field Calculator: create new field containing the longitude of the centroid#######
+        alg_params = {
+            'FIELD_LENGTH': 10,
+            'FIELD_NAME': 'cent_lon',
+            'FIELD_PRECISION': 10,
+            'FIELD_TYPE': 0,
+            'FORMULA': 'attribute($currentfeature, \'xcoord\')',
+            'INPUT': 'Calculado_7de0a7b2_d5b3_4090_b93c_90732a2bfe01',
+            'OUTPUT': parameters['Added_field_cent_lon']
+        }
+        outputs['CalculadoraDeCamposCent_lon'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Added_field_cent_lon'] = outputs['CalculadoraDeCamposCent_lon']['OUTPUT']
+
+        feedback.setCurrentStep(13)
+        if feedback.isCanceled():
+            return {}
+
+        
+#######Drop variables that you're not interested in: cent_lat_lon#######
+        alg_params = {
+            'COLUMN': ['fid','cat','xcoord','ycoord','fid_2','cat_2','vertex_index','vertex_part','vertex_part','_index','angle'],
+            'INPUT': 'Calculado_1d5469fb_ee3c_408f_a792_e4964bd8200f',
+            'OUTPUT': parameters['Centroids_lat_lon_drop_fields']
+        }
+        outputs['QuitarCamposCent_lat_lon'] = processing.run('qgis:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Centroids_lat_lon_drop_fields'] = outputs['QuitarCamposCent_lat_lon']['OUTPUT']
+        return results   
+     
+####### Add geometry attributes  #######
+        alg_params = {
+            'CALC_METHOD': 0,
+            'INPUT': 'Campos_restantes_82b5304d_11ed_4cc9_8333_cca4d684f08e',
+            'OUTPUT': parameters['Add_geo_coast']
+        }
+        outputs['AgregarAtributosDeGeometra'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Add_geo_coast'] = outputs['AgregarAtributosDeGeometra']['OUTPUT']
+
+        feedback.setCurrentStep(10)
+        if feedback.isCanceled():
+            return {}    
+        
+     
+
         alg_params = {
             'FIELD_LENGTH': 10,
             'FIELD_NAME': 'coast_lat',
@@ -312,55 +343,38 @@ class Modelo4b(QgsProcessingAlgorithm):
         feedback.setCurrentStep(17)
         if feedback.isCanceled():
             return {}
-
-        # Quitar campo(s) - centroids_coast_joined
+       
+#######Field Calculator: create new field containing the longitude of the coast centroid#######
         alg_params = {
-            'COLUMN': ['featurecla','scalerank','LABELRANK','SOVEREIGNT','SOV_A3','ADM0_DIF','LEVEL','TYPE','ADM0_A3','GEOU_DIF','GEOUNIT','GU_A3','SU_DIF','SUBUNIT','SU_A3','BRK_DIFF','NAME','NAME_LONG','BRK_A3','BRK_NAME','BRK_GROUP','ABBREV','POSTAL','FORMAL_EN','FORMAL_FR','NAME_CIAWF','NOTE_ADM0','NOTE_BRK','NAME_SORT','NAME_ALT','MAPCOLOR7','MAPCOLOR8','APCOLOR9','MAPCOLOR13','POP_EST','POP_RANK','GDP_MD_EST','POP_YEAR','LASTCENSUS','GDP_YEAR','ECONOMY','INCOME_GRP','WIKIPEDIA','FIPS_10_','ISO_A2','ISO_A3_EH','ISO_N3','UN_A3','WB_A2','WB_A3','WOE_ID','WOE_ID_EH','WOE_NOTE','ADM0_A3_IS','ADM0_A3_US','ADM0_A3_UN','ADM0_A3_WB','CONTINENT','REGION_UN','SUBREGION','REGION_WB','NAME_LEN','LONG_LEN','ABBREV_LEN','TINY','HOMEPART','MIN_ZOOM','MIN_LABEL','MAX_LABEL','NE_ID','WIKIDATAID','NAME_AR','NAME_BN','NAME_DE','NAME_EN','NAME_ES','NAME_FR','NAME_EL','NAME_HI','NAME_HU','NAME_ID','NAME_IT','NAME_JA','NAME_KO','NAME_NL','NAME_PL','NAME_PT','NAME_RU','NAME_SV','NAME_TR','NAME_VI','NAME_ZH','MAPCOLOR9','ADMIN_2','ISO_A3_2'],
-            'INPUT': 'Capa_unida_6cf146ea_9ec6_4efc_940e_616907d88a77',
-            'OUTPUT': parameters['Centroids_nearest_coast_joined_dropfields']
+            'FIELD_LENGTH': 10,
+            'FIELD_NAME': 'coast_lon',
+            'FIELD_PRECISION': 10,
+            'FIELD_TYPE': 0,
+            'FORMULA': 'attribute($currentfeature, \'xcoord\')',
+            'INPUT': 'Calculado_867f6c18_7cb6_478c_ba9b_3e8dd208c133',
+            'OUTPUT': parameters['Added_field_coast_lon']
         }
-        outputs['QuitarCamposCentroids_coast_joined'] = processing.run('qgis:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Centroids_nearest_coast_joined_dropfields'] = outputs['QuitarCamposCentroids_coast_joined']['OUTPUT']
+        outputs['CalculadoraDeCampos'] = processing.run('native:fieldcalculator', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+        results['Added_field_coast_lon'] = outputs['CalculadoraDeCampos']['OUTPUT']
 
-        feedback.setCurrentStep(18)
+        feedback.setCurrentStep(2)
         if feedback.isCanceled():
             return {}
 
-        # Agregar atributos de geometría
-        alg_params = {
-            'CALC_METHOD': 0,
-            'INPUT': outputs['Centroides']['OUTPUT'],
-            'OUTPUT': parameters['Centroids_w_coord']
-        }
-        outputs['AgregarAtributosDeGeometra'] = processing.run('qgis:exportaddgeometrycolumns', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Centroids_w_coord'] = outputs['AgregarAtributosDeGeometra']['OUTPUT']
+        
 
-        feedback.setCurrentStep(19)
+#######Drop variables that you're not interested in: coast_lon#######
+        alg_params = {
+            'COLUMN': ['xcoord','ycoord\n'],
+            'INPUT': 'Calculado_3c69fec3_1786_4950_af43_2cb9cce6990d',
+            'OUTPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/output/csvout.gpkg',
+            'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
+        }
+        outputs['QuitarCamposCoast_lon'] = processing.run('qgis:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
+
+        feedback.setCurrentStep(5)
         if feedback.isCanceled():
             return {}
-
-        # Quitar campo(s) - centroids_w_coast
-        alg_params = {
-            'COLUMN': ['featurecla','scalerank','LABELRANK','SOVEREIGNT','SOV_A3','ADM0_DIF','LEVEL','TYPE','ADM0_A3','GEOU_DIF','GEOUNIT','GU_A3','SU_DIF','SUBUNIT','SU_A3','BRK_DIFF','NAME','NAME_LONG','BRK_A3','BRK_NAME','BRK_GROUP','ABBREV','POSTAL','FORMAL_EN','FORMAL_FR','NAME_CIAWF','NOTE_ADM0','NOTE_BRK','NAME_SORT','NAME_ALT','MAPCOLOR7','MAPCOLOR8','APCOLOR9','MAPCOLOR13','POP_EST','POP_RANK','GDP_MD_EST','POP_YEAR','LASTCENSUS','GDP_YEAR','ECONOMY','INCOME_GRP','WIKIPEDIA','FIPS_10_','ISO_A2','ISO_A3_EH','ISO_N3','UN_A3','WB_A2','WB_A3','WOE_ID','WOE_ID_EH','WOE_NOTE','ADM0_A3_IS','ADM0_A3_US','ADM0_A3_UN','ADM0_A3_WB','CONTINENT','REGION_UN','SUBREGION','REGION_WB','NAME_LEN','LONG_LEN','ABBREV_LEN','TINY','HOMEPART','MIN_ZOOM','MIN_LABEL','MAX_LABEL','NE_ID','WIKIDATAID','NAME_AR','NAME_BN','NAME_DE','NAME_EN','NAME_ES','NAME_FR','NAME_EL','NAME_HI','NAME_HU','NAME_ID','NAME_IT','NAME_JA','NAME_KO','NAME_NL','NAME_PL','NAME_PT','NAME_RU','NAME_SV','NAME_TR','NAME_VI','NAME_ZH','MAPCOLOR9'],
-            'INPUT': 'Información_de_geometría_añadida_028a0ab0_2033_4655_a86f_3f5fdd2a8316',
-            'OUTPUT': parameters['Centroidout']
-        }
-        outputs['QuitarCamposCentroids_w_coast'] = processing.run('qgis:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Centroidout'] = outputs['QuitarCamposCentroids_w_coast']['OUTPUT']
-
-        feedback.setCurrentStep(20)
-        if feedback.isCanceled():
-            return {}
-
-        # Quitar campo(s) - cent_lat_lon
-        alg_params = {
-            'COLUMN': ['fid','cat','xcoord','ycoord','fid_2','cat_2','vertex_index','vertex_part','vertex_part','_index','angle'],
-            'INPUT': 'Calculado_1d5469fb_ee3c_408f_a792_e4964bd8200f',
-            'OUTPUT': parameters['Centroids_lat_lon_drop_fields']
-        }
-        outputs['QuitarCamposCent_lat_lon'] = processing.run('qgis:deletecolumn', alg_params, context=context, feedback=feedback, is_child_algorithm=True)
-        results['Centroids_lat_lon_drop_fields'] = outputs['QuitarCamposCent_lat_lon']['OUTPUT']
-        return results
 
     def name(self):
         return 'modelo4b '

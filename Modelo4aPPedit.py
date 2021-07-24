@@ -1,9 +1,5 @@
-"""
-Model exported as python.
-Name : modelo4a
-Group : 
-With QGIS : 31608
-"""
+#######Prepare QGIS for working#############################################################################################################################
+############################################################################################################################################################
 
 from qgis.core import QgsProcessing
 from qgis.core import QgsProcessingAlgorithm
@@ -19,14 +15,15 @@ class Modelo4a(QgsProcessingAlgorithm):
         self.addParameter(QgsProcessingParameterFeatureSink('Fixgeo_countries', 'fixgeo_countries', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, supportsAppend=True, defaultValue=None))
         self.addParameter(QgsProcessingParameterFeatureSink('Intersection', 'intersection', type=QgsProcessing.TypeVectorAnyGeometry, createByDefault=True, defaultValue=None))
 
-    def processAlgorithm(self, parameters, context, model_feedback):
-        # Use a multi-step feedback, so that individual child algorithm progress reports are adjusted for the
-        # overall progress through the model
+    def processAlgorithm(self, parameters, context, model_feedback)
         feedback = QgsProcessingMultiStepFeedback(4, model_feedback)
         results = {}
         outputs = {}
+############################################################################################################################################################
 
-        # Corregir geometrías wlds
+#######Fix geometries of shapfile imported from model 1#######
+#######Use this tool to fix any polygon geometry-related problem (sometimes polygons may stack one on top of the other)#######
+  
         alg_params = {
             'INPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/output/clean.shp',
             'OUTPUT': parameters['Fixgeo_wlds']
@@ -37,8 +34,11 @@ class Modelo4a(QgsProcessingAlgorithm):
         feedback.setCurrentStep(1)
         if feedback.isCanceled():
             return {}
-
-        # Corregir geometrías countries
+        
+        
+#######Fix geometries of new shapfile imported#######
+#######Use this tool to fix any polygon geometry-related problem (sometimes polygons may stack one on top of the other)#######
+   
         alg_params = {
             'INPUT': '/Users/rochipodesta/Desktop/maestría/Herramientas/semana 5/input/ne_10m_admin_0_countries/ne_10m_admin_0_countries.dbf',
             'OUTPUT': parameters['Fixgeo_countries']

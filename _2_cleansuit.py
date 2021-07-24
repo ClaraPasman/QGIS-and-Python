@@ -30,7 +30,7 @@
     
     
 #######Set paths to inputs and outputs#######
-mainpath = "/Users/magibbons/Desktop/Herramientas/Clase5/input"
+mainpath = "/Users/clara/Documents/MAESTRIA/HERRAMIENTAS COMPUTACIONALES/PYTHON-QGGIS 2"
 suitin = "{}/suit/suit/hdr.adf".format(mainpath)
 outpath = "{}/_output/".format(mainpath)
 suitout = "{}/landquality.tif".format(outpath)

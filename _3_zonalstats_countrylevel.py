@@ -60,20 +60,20 @@ fixgeo_dict = {
     'INPUT': countries,
     'OUTPUT': 'memory:'
 }
-fix_geo = processing.run('native:fixgeometries', fixgeo_dict)['OUTPUT']
+geomfixed= processing.run('native:fixgeometries', fixgeo_dict)['OUTPUT']
 
 #######Drop variables that you're not interested in and save as a new layer#######
 print('dropping unnecessary fields')
-allfields = [field.name() for field in fix_geo.fields()]
+allfields = [field.name() for field in geomfixed.fields()]
 keepfields = ['ADMIN', 'ISO_A3']
-dropfields = [field for field in allfields if field not in keepfields]
+drop_fields = [field for field in allfields if field not in keepfields]
 
 drop_dict = {
-    'COLUMN': dropfields,
-    'INPUT': fix_geo,
+    'COLUMN': dropped,
+    'INPUT': geomfixed,
     'OUTPUT': 'memory:'
 }
-drop_fields = processing.run('qgis:deletecolumn', drop_dict)['OUTPUT']
+dropped = processing.run('qgis:deletecolumn', drop_dict)['OUTPUT']
 
 ######## Select the zonal satatistics for each country for each raster (mean of land quality and population), calculate mean and save as new layer#######
 ####### Instead of doing one by one we loop over the rasters #######
@@ -85,7 +85,7 @@ for idx, rast in enumerate(RASTS):
 	zs_dict = {
 	    'COLUMN_PREFIX': pref,
 	    'INPUT_RASTER': rast,
-	    'INPUT_VECTOR': drop_fields,
+	    'INPUT_VECTOR': dropped,
 	    'RASTER_BAND': 1,
 	    'STATS': [2]
 	}
@@ -95,10 +95,10 @@ for idx, rast in enumerate(RASTS):
 print('outputting the data')
 
 with open(outcsv, 'w') as output_file:
-    fieldnames = [field.name() for field in drop_fields.fields()]
+    fieldnames = [field.name() for field in dropped.fields()]
     line = ','.join(name for name in fieldnames) + '\n'
     output_file.write(line)
-    for f in drop_fields.getFeatures():
+    for f in dropped.getFeatures():
         line = ','.join(str(f[name]) for name in fieldnames) + '\n'
         output_file.write(line)
                                         

@@ -1,42 +1,41 @@
-#########################################################################################
-#########################################################################################
-# SETUP PREAMBLE FOR RUNNING STANDALONE SCRIPTS.
-# NOT NECESSARY IF YOU ARE RUNNING THIS INSIDE THE QGIS GUI.
-# print('preliminary setup')
-# import sys
-# import os
+#######Prepare QGIS for working#######
+#########################################################################################################
 
-# from qgis.core import (
-#     QgsApplication, 
-#     QgsVectorLayer,
-#     QgsCoordinateReferenceSystem,
-# )
+ print('preliminary setup')
+ import sys
+ import os
 
-# from qgis.analysis import QgsNativeAlgorithms
+ from qgis.core import (
+     QgsApplication, 
+     QgsVectorLayer,
+     QgsCoordinateReferenceSystem,
+ )
 
-# # See https://gis.stackexchange.com/a/155852/4972 for details about the prefix 
-# QgsApplication.setPrefixPath('C:/OSGeo4W64/apps/qgis', True)
-# qgs = QgsApplication([], False)
-# qgs.initQgis()
+ from qgis.analysis import QgsNativeAlgorithms
 
-# # Add the path to Processing framework  
-# sys.path.append('C:/OSGeo4W64/apps/qgis/python/plugins')
 
-# # Import and initialize Processing framework
-# import processing
-# from processing.core.Processing import Processing
-# Processing.initialize()
-# QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
-#########################################################################################
-#########################################################################################
+ QgsApplication.setPrefixPath('C:/OSGeo4W64/apps/qgis', True)
+ qgs = QgsApplication([], False)
+ qgs.initQgis()
 
-# set paths to inputs and outputs
+
+ sys.path.append('C:/OSGeo4W64/apps/qgis/python/plugins')
+
+
+ import processing
+ from processing.core.Processing import Processing
+ Processing.initialize()
+ QgsApplication.processingRegistry().addProvider(QgsNativeAlgorithms())
+#########################################################################################################
+    
+    
+#######Set paths to inputs and outputs#######
 mainpath = "/Users/magibbons/Desktop/Herramientas/Clase5/input"
 suitin = "{}/suit/suit/hdr.adf".format(mainpath)
 outpath = "{}/_output/".format(mainpath)
 suitout = "{}/landquality.tif".format(outpath)
 
-# defining WGS 84 SR
+####### Select a certain coordinate system#######
 crs_wgs84 = QgsCoordinateReferenceSystem("epsg:4326")
 
 ##################################################################

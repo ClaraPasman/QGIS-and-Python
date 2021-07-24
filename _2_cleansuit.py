@@ -38,13 +38,9 @@ suitout = "{}/landquality.tif".format(outpath)
 ####### Select a certain coordinate system#######
 crs_wgs84 = QgsCoordinateReferenceSystem("epsg:4326")
 
-##################################################################
-# Warp (reproject)
-##################################################################
-# note: Warp does not accept memory output
-# could also specify: 'OUTPUT': QgsProcessing.TEMPORARY_OUTPUT
-# this will create new files in your OS temp directory (in my (Windows) case:
-# /user/Appdata/Local/Temp/processing_somehashkey
+####### REPROJECT#######
+###Reproject an existing layer and save it as a new layer ### 
+
 print('defining projection for the suitability data')
 warp_dict = {
     'DATA_TYPE': 0,
@@ -64,9 +60,8 @@ warp_dict = {
 processing.run('gdal:warpreproject', warp_dict)
 
 
-##################################################################
-# Extract projection
-##################################################################
+####### Extract projection: save as .tif the reprojected layer#######
+
 print('extracting the projection for land suitability')
 extpr_dict = {
     'INPUT': suitout,

@@ -50,7 +50,8 @@ class Modelo4a(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        # Intersección
+        ####### Intersect both shapefiles into a new layer and save it. Obtain countries that are contained in both shapefiles #######
+        ######## Select which fields you want to keep and intersect from each dataset#######
         alg_params = {
             'INPUT': outputs['CorregirGeometrasWlds']['OUTPUT'],
             'INPUT_FIELDS': ['GID'],
@@ -66,7 +67,7 @@ class Modelo4a(QgsProcessingAlgorithm):
         if feedback.isCanceled():
             return {}
 
-        # Estadísticas por categorías
+        ####### Obtain the number of times that 1 country is present in the intersected attribute table#######
         alg_params = {
             'CATEGORIES_FIELD_NAME': ['ADMIN'],
             'INPUT': outputs['Interseccin']['OUTPUT'],
